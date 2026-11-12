@@ -123,6 +123,456 @@ document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeModal
 document.addEventListener('keydown',e=>{const open=document.getElementById('modal').classList.contains('show');if(open){if(e.key==='Escape')closeModal();if(e.key==='Tab'){const list=[...document.querySelectorAll('#modalBody button:not(:disabled),#modalBody input,#modalBody textarea,#modalBody select')];const first=list[0],last=list[list.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}return;}if(/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName))return;if(activeTab==='learn'&&session){if((e.key===' '||e.key==='Enter')&&!session.revealed&&session.queue[session.index]){e.preventDefault();revealCard();}else if(session.revealed&&['1','2','3'].includes(e.key)){e.preventDefault();gradeCard({'1':'again','2':'hard','3':'good'}[e.key]);}}});
 let visibleDay=dayKey();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(dayKey()!==visibleDay){visibleDay=dayKey();session=null;quiz=null;quizNo=0;quizRight=0;renderCurrent();}else if(activeTab==='home')renderHome();else if(activeTab==='learn'&&session&&session.index>=session.queue.length){session=null;renderLearn();}}});
 readState();todayLog();refreshVoices();if('speechSynthesis'in window)speechSynthesis.onvoiceschanged=refreshVoices;updateHeader();renderHome();
+
+/* =========================================================
+   慢慢英语 · 扩展包
+   新增：日常口语、GitHub、Windows、Linux、编程、AI 软件词库
+   新增：口语短句课程
+   优化：英语语音选择
+   粘贴在原 index.html 主 script 的最后、</script> 之前
+========================================================= */
+
+/* 1. 扩展词库
+   每个词条格式：
+   [英文, 中文, 英文例句, 中文翻译, 分类]
+*/
+
+const EXTRA_WORDS = [
+
+/* ===== GitHub 常用操作 ===== */
+["repository","代码仓库","Create a new repository.","创建一个新的代码仓库。","GitHub"],
+["repo","仓库（repository 的缩写）","Open your repository.","打开你的仓库。","GitHub"],
+["commit","提交更改","Commit your changes.","提交你的更改。","GitHub"],
+["push","推送代码","Push your code to GitHub.","把代码推送到 GitHub。","GitHub"],
+["pull","拉取更新","Pull the latest changes.","拉取最新的更改。","GitHub"],
+["branch","分支","Create a new branch.","创建一个新分支。","GitHub"],
+["merge","合并","Merge the two branches.","合并两个分支。","GitHub"],
+["fork","复刻仓库","Fork this repository.","复刻这个仓库。","GitHub"],
+["clone","克隆","Clone the repository.","克隆这个仓库。","GitHub"],
+["issue","问题反馈","Open a new issue.","创建一个问题反馈。","GitHub"],
+["pull request","拉取请求","Create a pull request.","创建一个拉取请求。","GitHub"],
+["review","代码审查","Review the code.","审查代码。","GitHub"],
+["diff","代码差异","Check the diff.","检查代码差异。","GitHub"],
+["conflict","冲突","There is a merge conflict.","这里存在合并冲突。","GitHub"],
+["main","主分支","The main branch is ready.","主分支已经准备好了。","GitHub"],
+["release","发布版本","Create a new release.","创建一个新版本。","GitHub"],
+["tag","标签","Add a version tag.","添加一个版本标签。","GitHub"],
+["workflow","工作流程","The workflow failed.","工作流程执行失败了。","GitHub"],
+["actions","自动化工作流","Check GitHub Actions.","查看 GitHub 自动化工作流。","GitHub"],
+["star","收藏","Give this project a star.","给这个项目点个星标。","GitHub"],
+["watch","关注","Watch this repository.","关注这个仓库。","GitHub"],
+["notification","通知","Check your notifications.","查看你的通知。","GitHub"],
+["contributor","贡献者","Thank you for your contribution.","感谢你的贡献。","GitHub"],
+["collaborator","协作者","Add a collaborator.","添加一名协作者。","GitHub"],
+["deploy","部署","Deploy the website.","部署这个网站。","GitHub"],
+["deployment","部署过程","The deployment is complete.","部署已经完成。","GitHub"],
+["commit message","提交说明","Write a clear commit message.","写一条清晰的提交说明。","GitHub"],
+["default branch","默认分支","Set the default branch.","设置默认分支。","GitHub"],
+
+/* ===== 软件界面按钮 ===== */
+["create new","新建","Click Create new.","点击新建。","软件界面"],
+["new file","新建文件","Create a new file.","创建一个新文件。","软件界面"],
+["edit","编辑","Click Edit to change the file.","点击编辑来修改文件。","软件界面"],
+["delete","删除","Delete the old file.","删除旧文件。","软件界面"],
+["save","保存","Save your changes.","保存你的更改。","软件界面"],
+["cancel","取消","Click Cancel to go back.","点击取消返回。","软件界面"],
+["confirm","确认","Confirm your choice.","确认你的选择。","软件界面"],
+["submit","提交","Submit the form.","提交表单。","软件界面"],
+["discard","放弃更改","Discard your changes.","放弃你的更改。","软件界面"],
+["upload","上传","Upload your files.","上传你的文件。","软件界面"],
+["download","下载","Download the file.","下载这个文件。","软件界面"],
+["download ZIP","下载压缩包","Download the ZIP file.","下载 ZIP 压缩包。","软件界面"],
+["search","搜索","Search for a file.","搜索一个文件。","软件界面"],
+["filter","筛选","Filter the results.","筛选搜索结果。","软件界面"],
+["sort","排序","Sort by date.","按日期排序。","软件界面"],
+["open","打开","Open the settings.","打开设置。","软件界面"],
+["close","关闭","Close the window.","关闭窗口。","软件界面"],
+["back","返回","Go back to the previous page.","返回上一页。","软件界面"],
+["next","下一步","Click Next to continue.","点击下一步继续。","软件界面"],
+["previous","上一步","Go to the previous step.","返回上一步。","软件界面"],
+["copy","复制","Copy the link.","复制链接。","软件界面"],
+["paste","粘贴","Paste the code here.","把代码粘贴到这里。","软件界面"],
+["rename","重命名","Rename the file.","重命名文件。","软件界面"],
+["move","移动","Move the folder.","移动这个文件夹。","软件界面"],
+["refresh","刷新","Refresh the page.","刷新页面。","软件界面"],
+["reload","重新加载","Reload the application.","重新加载应用程序。","软件界面"],
+["enable","启用","Enable this feature.","启用这个功能。","软件界面"],
+["disable","禁用","Disable this option.","禁用这个选项。","软件界面"],
+["install","安装","Install the software.","安装这个软件。","软件界面"],
+["uninstall","卸载","Uninstall the old version.","卸载旧版本。","软件界面"],
+["update","更新","Update the application.","更新这个应用程序。","软件界面"],
+["upgrade","升级","Upgrade your software.","升级你的软件。","软件界面"],
+["settings","设置","Open the settings menu.","打开设置菜单。","软件界面"],
+["preferences","偏好设置","Change your preferences.","修改你的偏好设置。","软件界面"],
+["sign in","登录","Sign in to your account.","登录你的账户。","软件界面"],
+["sign out","退出登录","Sign out of your account.","退出你的账户。","软件界面"],
+["sign up","注册","Sign up for a new account.","注册一个新账户。","软件界面"],
+["password","密码","Enter your password.","输入你的密码。","软件界面"],
+["username","用户名","Enter your username.","输入你的用户名。","软件界面"],
+["profile","个人资料","Update your profile.","更新你的个人资料。","软件界面"],
+["permission","权限","You need permission to access this file.","你需要权限才能访问这个文件。","软件界面"],
+["private","私有","This repository is private.","这个仓库是私有的。","软件界面"],
+["public","公开","Make the repository public.","将仓库设置为公开。","软件界面"],
+
+/* ===== 电脑与文件操作 ===== */
+["file","文件","Open the file.","打开这个文件。","电脑操作"],
+["folder","文件夹","Create a new folder.","创建一个新文件夹。","电脑操作"],
+["directory","目录","Open the project directory.","打开项目目录。","电脑操作"],
+["file path","文件路径","Check the file path.","检查文件路径。","电脑操作"],
+["filename","文件名","Change the filename.","修改文件名。","电脑操作"],
+["extension","扩展名","This file has a JSON extension.","这个文件的扩展名是 JSON。","电脑操作"],
+["configuration","配置","Check the configuration.","检查配置。","电脑操作"],
+["config file","配置文件","Open the config file.","打开配置文件。","电脑操作"],
+["shortcut","快捷方式","Create a desktop shortcut.","创建桌面快捷方式。","电脑操作"],
+["terminal","终端","Open the terminal.","打开终端。","电脑操作"],
+["command","命令","Run this command.","运行这条命令。","电脑操作"],
+["command line","命令行","Use the command line.","使用命令行。","电脑操作"],
+["administrator","管理员","Run as administrator.","以管理员身份运行。","电脑操作"],
+["process","进程","Check the running process.","检查正在运行的进程。","电脑操作"],
+["task","任务","The task is complete.","任务已经完成。","电脑操作"],
+["storage","存储空间","Check your storage space.","检查你的存储空间。","电脑操作"],
+["backup","备份","Make a backup first.","先做一个备份。","电脑操作"],
+["restore","恢复","Restore the backup.","恢复备份。","电脑操作"],
+["clipboard","剪贴板","Copy it to the clipboard.","把它复制到剪贴板。","电脑操作"],
+["recycle bin","回收站","Check the recycle bin.","检查回收站。","电脑操作"],
+["desktop","桌面","Save it to the desktop.","把它保存到桌面。","电脑操作"],
+["drive","磁盘","Select the USB drive.","选择 USB 磁盘。","电脑操作"],
+
+/* ===== 编程与开发 ===== */
+["source code","源代码","Open the source code.","打开源代码。","编程开发"],
+["code editor","代码编辑器","Open your code editor.","打开代码编辑器。","编程开发"],
+["programming","编程","I am learning programming.","我正在学习编程。","编程开发"],
+["developer","开发者","The developer fixed the bug.","开发者修复了这个错误。","编程开发"],
+["debug","调试","We need to debug the program.","我们需要调试这个程序。","编程开发"],
+["bug","程序错误","I found a bug.","我发现了一个程序错误。","编程开发"],
+["error","错误","There is an error in the code.","代码中有一个错误。","编程开发"],
+["warning","警告","This is only a warning.","这只是一个警告。","编程开发"],
+["dependency","依赖项","Install the dependencies.","安装依赖项。","编程开发"],
+["package","软件包","Install this package.","安装这个软件包。","编程开发"],
+["library","程序库","Import the library.","导入这个程序库。","编程开发"],
+["framework","框架","This framework is easy to use.","这个框架很容易使用。","编程开发"],
+["version","版本","Check the software version.","检查软件版本。","编程开发"],
+["environment","环境","Set up the development environment.","配置开发环境。","编程开发"],
+["environment variable","环境变量","Set the environment variable.","设置环境变量。","编程开发"],
+["build","构建","Build the project.","构建这个项目。","编程开发"],
+["compile","编译","Compile the source code.","编译源代码。","编程开发"],
+["run","运行","Run the program.","运行这个程序。","编程开发"],
+["execute","执行","Execute the command.","执行这条命令。","编程开发"],
+["server","服务器","The server is running.","服务器正在运行。","编程开发"],
+["client","客户端","Restart the client.","重新启动客户端。","编程开发"],
+["API","应用程序接口","Connect to the API.","连接到 API。","编程开发"],
+["request","请求","Send a request.","发送一个请求。","编程开发"],
+["response","响应","Wait for the response.","等待响应。","编程开发"],
+["token","令牌","Enter your access token.","输入你的访问令牌。","编程开发"],
+["log","日志","Check the error log.","检查错误日志。","编程开发"],
+["retry","重试","Please try again.","请再试一次。","编程开发"],
+["connection","连接","Check your internet connection.","检查你的网络连接。","编程开发"],
+["timeout","超时","The request timed out.","请求超时了。","编程开发"],
+["failed","失败","The operation failed.","操作失败了。","编程开发"],
+["successful","成功的","The installation was successful.","安装成功了。","编程开发"],
+["pending","等待中","Your request is pending.","你的请求正在等待处理。","编程开发"],
+["completed","已完成","The process is completed.","这个过程已经完成。","编程开发"],
+
+/* ===== AI 与显卡 ===== */
+["artificial intelligence","人工智能","Artificial intelligence is changing the world.","人工智能正在改变世界。","AI与硬件"],
+["model","模型","Load the AI model.","加载 AI 模型。","AI与硬件"],
+["checkpoint","模型检查点","Download the checkpoint.","下载模型检查点。","AI与硬件"],
+["inference","推理","Run model inference.","运行模型推理。","AI与硬件"],
+["GPU","图形处理器","The GPU is running.","显卡正在运行。","AI与硬件"],
+["VRAM","显存","The model needs more VRAM.","这个模型需要更多显存。","AI与硬件"],
+["memory","内存","Check the memory usage.","检查内存使用情况。","AI与硬件"],
+["out of memory","内存不足","The program is out of memory.","程序内存不足。","AI与硬件"],
+["prompt","提示词","Write a better prompt.","写一个更好的提示词。","AI与硬件"],
+["sampling","采样","Change the sampling settings.","修改采样设置。","AI与硬件"],
+["node","节点","Connect these two nodes.","连接这两个节点。","AI与硬件"],
+["workflow","工作流","Load the workflow.","加载工作流。","AI与硬件"],
+["render","渲染","Render the final video.","渲染最终视频。","AI与硬件"],
+["resolution","分辨率","Change the resolution.","修改分辨率。","AI与硬件"],
+["frame rate","帧率","Increase the frame rate.","提高帧率。","AI与硬件"],
+["generate","生成","Generate an image.","生成一张图片。","AI与硬件"],
+
+/* ===== 日常口语 ===== */
+["actually","其实；实际上","Actually, I don't know.","其实，我不知道。","日常口语"],
+["probably","可能；大概","I'll probably be late.","我可能会迟到。","日常口语"],
+["maybe","也许；可能","Maybe we can try again.","也许我们可以再试一次。","日常口语"],
+["exactly","正是；完全正确","Exactly! That's what I mean.","没错！我就是这个意思。","日常口语"],
+["really","真的；确实","Really? That's great!","真的吗？太棒了！","日常口语"],
+["anyway","不管怎样","Anyway, let's get started.","不管怎样，我们开始吧。","日常口语"],
+["sure","当然；没问题","Sure, no problem.","当然，没问题。","日常口语"],
+["awesome","太棒了","That sounds awesome.","听起来太棒了。","日常口语"],
+["got it","明白了","Got it. Thank you.","明白了，谢谢。","日常口语"],
+["no worries","没关系；别担心","No worries. Take your time.","没关系，慢慢来。","日常口语"],
+["sounds good","听起来不错","Sounds good to me.","我觉得不错。","日常口语"],
+["take your time","慢慢来","Take your time. I'm not in a hurry.","慢慢来，我不着急。","日常口语"],
+["hang on","等一下","Hang on a second.","等一下。","日常口语"],
+["come on","来吧；快点","Come on, let's go.","来吧，我们走。","日常口语"],
+["figure out","弄明白；解决","I'll figure it out.","我会想办法弄明白。","日常口语"],
+["make sense","有道理；讲得通","That makes sense.","这说得通。","日常口语"],
+["I'm not sure","我不确定","I'm not sure about that.","我对此不太确定。","日常口语"],
+["it depends","看情况","It depends on the situation.","这要看具体情况。","日常口语"],
+["let me check","让我检查一下","Let me check the settings.","让我检查一下设置。","日常口语"],
+["what happened","发生什么了","What happened here?","这里发生什么了？","日常口语"],
+["how does it work","它是怎么工作的","How does this feature work?","这个功能是怎么工作的？","日常口语"],
+["that's fine","没问题；可以","That's fine with me.","我觉得可以。","日常口语"],
+["I see","我明白了","Oh, I see.","哦，我明白了。","日常口语"],
+["one more time","再来一次","Could you say that one more time?","你能再说一遍吗？","日常口语"],
+["not yet","还没有","Not yet. I'm still working on it.","还没有，我还在处理。","日常口语"]
+
+];
+
+/* 去重后加入原词库，保留原有学习系统 */
+const existingWords = new Set(
+  RAW.map(item => String(item[0]).toLowerCase())
+);
+
+const newWords = EXTRA_WORDS.filter(item => {
+  const key = String(item[0]).toLowerCase();
+  if (existingWords.has(key)) return false;
+  existingWords.add(key);
+  return true;
+});
+
+RAW.push(...newWords);
+
+
+/* 2. 新增实用短句课程 */
+
+const EXTRA_LESSONS = [
+
+{
+  title:"16 · GitHub 创建仓库",
+  desc:"学会看懂 GitHub 常见按钮和操作。",
+  lines:[
+    ["Create a new repository.","创建一个新的代码仓库。"],
+    ["Enter a repository name.","输入仓库名称。"],
+    ["Add a description.","添加项目描述。"],
+    ["Choose public or private.","选择公开或私有。"],
+    ["Click Create repository.","点击创建仓库。"],
+    ["Upload your files.","上传你的文件。"],
+    ["Commit your changes.","提交你的更改。"],
+    ["Your repository is ready.","你的仓库已经准备好了。"]
+  ]
+},
+
+{
+  title:"17 · GitHub 上传代码",
+  desc:"以后看到这些英文，就知道该点击哪里。",
+  lines:[
+    ["Open your repository.","打开你的仓库。"],
+    ["Click Add file.","点击添加文件。"],
+    ["Choose Upload files.","选择上传文件。"],
+    ["Select the files you want to upload.","选择你想上传的文件。"],
+    ["Write a commit message.","填写提交说明。"],
+    ["Click Commit changes.","点击提交更改。"],
+    ["Wait for the upload to finish.","等待上传完成。"],
+    ["Check your updated files.","检查更新后的文件。"]
+  ]
+},
+
+{
+  title:"18 · GitHub 分支与合并",
+  desc:"理解 branch、commit、merge 等核心词汇。",
+  lines:[
+    ["Create a new branch.","创建一个新分支。"],
+    ["Make your changes.","进行修改。"],
+    ["Commit your changes.","提交更改。"],
+    ["Push the branch to GitHub.","把分支推送到 GitHub。"],
+    ["Open a pull request.","创建一个拉取请求。"],
+    ["Review the changes.","检查这些更改。"],
+    ["Merge the pull request.","合并拉取请求。"],
+    ["Delete the old branch.","删除旧分支。"]
+  ]
+},
+
+{
+  title:"19 · 软件界面常用英语",
+  desc:"Windows、浏览器和各种软件里经常遇到的表达。",
+  lines:[
+    ["Click Settings.","点击设置。"],
+    ["Select the language.","选择语言。"],
+    ["Save your changes.","保存你的更改。"],
+    ["Restart the application.","重新启动应用程序。"],
+    ["The update is available.","有可用更新。"],
+    ["The installation is complete.","安装已经完成。"],
+    ["Something went wrong.","出了点问题。"],
+    ["Please try again later.","请稍后再试。"],
+    ["Are you sure you want to continue?","你确定要继续吗？"],
+    ["This action cannot be undone.","此操作无法撤销。"]
+  ]
+},
+
+{
+  title:"20 · Linux 与 AI 软件",
+  desc:"适合终端、ComfyUI、模型部署等操作。",
+  lines:[
+    ["Open the terminal.","打开终端。"],
+    ["Enter the command.","输入命令。"],
+    ["Install the required packages.","安装所需的软件包。"],
+    ["Check the GPU status.","检查显卡状态。"],
+    ["Load the model.","加载模型。"],
+    ["The model is downloading.","模型正在下载。"],
+    ["The process is still running.","程序仍在运行。"],
+    ["The GPU memory is full.","显存已经满了。"],
+    ["Check the error log.","检查错误日志。"],
+    ["Restart the service.","重新启动服务。"]
+  ]
+},
+
+{
+  title:"21 · 日常聊天口语",
+  desc:"不只是背单词，更要学会实际交流。",
+  lines:[
+    ["How's it going?","最近怎么样？"],
+    ["Pretty good. How about you?","挺好的，你呢？"],
+    ["What are you up to?","你在忙什么？"],
+    ["I'm just working on something.","我正在处理一些事情。"],
+    ["Give me a second.","给我一点时间。"],
+    ["I'll be right back.","我马上回来。"],
+    ["That sounds interesting.","听起来很有意思。"],
+    ["I totally agree.","我完全同意。"],
+    ["Let's give it a try.","我们试试看。"],
+    ["Keep me updated.","有进展记得告诉我。"]
+  ]
+}
+
+];
+
+LESSONS.push(...EXTRA_LESSONS);
+
+
+/* 3. 优化英语发音
+   自动选择设备中可用的英语语音。
+   注意：最终音质仍由 Windows、macOS、Android 或 iOS 的语音决定。
+*/
+
+function refreshVoices() {
+  if (!("speechSynthesis" in window)) {
+    voices = [];
+    return;
+  }
+
+  voices = speechSynthesis.getVoices() || [];
+}
+
+function chooseEnglishVoice() {
+  refreshVoices();
+
+  const englishVoices = voices.filter(v =>
+    /^en([-_]|$)/i.test(v.lang)
+  );
+
+  if (!englishVoices.length) return null;
+
+  function scoreVoice(v) {
+    const name = (v.name || "").toLowerCase();
+    const lang = (v.lang || "").toLowerCase();
+
+    let score = 0;
+
+    if (lang === "en-us") score += 30;
+    else if (lang.startsWith("en-us")) score += 25;
+    else if (lang.startsWith("en-gb")) score += 15;
+    else score += 5;
+
+    if (/natural|neural|enhanced|premium/.test(name)) score += 40;
+    if (/jenny|aria|ava|samantha/.test(name)) score += 30;
+    if (/google us english/.test(name)) score += 30;
+    if (/microsoft/.test(name)) score += 10;
+
+    if (/espeak|robot|compact/.test(name)) score -= 40;
+
+    if (v.localService) score += 3;
+
+    return score;
+  }
+
+  return englishVoices.sort(
+    (a, b) => scoreVoice(b) - scoreVoice(a)
+  )[0];
+}
+
+function speak(text) {
+  if (!text) {
+    toast("没有可以朗读的内容。");
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    toast("当前浏览器不支持英语朗读。");
+    return;
+  }
+
+  refreshVoices();
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(
+    String(text).replace(/[’]/g, "'")
+  );
+
+  const voice = chooseEnglishVoice();
+
+  utterance.lang = voice ? voice.lang : "en-US";
+
+  if (voice) {
+    utterance.voice = voice;
+  }
+
+  const savedRate = Number(state.settings.rate) || 0.8;
+
+  utterance.rate = Math.max(
+    0.65,
+    Math.min(1.1, savedRate)
+  );
+
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  utterance.onerror = event => {
+    if (
+      event.error !== "interrupted" &&
+      event.error !== "canceled"
+    ) {
+      toast("朗读失败，请检查设备语音和音量。");
+    }
+  };
+
+  speakingUtterance = utterance;
+  speechSynthesis.speak(utterance);
+}
+
+
+/* 4. 更新词库数量显示 */
+const originalRenderLibrary = renderLibrary;
+
+renderLibrary = function() {
+  originalRenderLibrary();
+
+  const subtitle = document.querySelector("#library .sub");
+
+  if (subtitle && subtitle.textContent.includes("内置")) {
+    subtitle.textContent =
+      `内置 ${BUILTIN.length} 个单词 · 新增软件英语、GitHub、AI 与日常口语 · 可添加自己的词`;
+  }
+};
+
+
+/* 5. 刷新语音列表 */
+refreshVoices();
+
+if ("speechSynthesis" in window) {
+  speechSynthesis.onvoiceschanged = refreshVoices;
+}
+
+/* 扩展包加载完成 */
+console.log(
+  "慢慢英语扩展包加载成功：",
+  newWords.length,
+  "个新增词条；",
+  EXTRA_LESSONS.length,
+  "组新增课程。"
+);
+
+
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"e5e744afbd31498397414cf689428e6f","spa":2}' crossorigin="anonymous"></script>
 </body></html>
